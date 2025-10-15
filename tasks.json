@@ -2,5 +2,9 @@
     {
         "title": "Learning Python",
         "completed": true
+    },
+    {
+        "title": "Create contents",
+        "completed": false
     }
 ]

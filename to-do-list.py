@@ -1,120 +1,104 @@
+import tkinter as tk
+from tkinter import messagebox
 import json
 import os
 
 FILE_NAME = "tasks.json"
 
-# ✅ Load tasks from file if exists
+# ----------------- File Functions -----------------
 def load_tasks():
     if os.path.exists(FILE_NAME):
         with open(FILE_NAME, "r") as file:
             return json.load(file)
     return []
 
-# 💾 Save tasks to file
 def save_tasks(tasks):
     with open(FILE_NAME, "w") as file:
         json.dump(tasks, file, indent=4)
 
-# 🧩 Display menu
-def show_menu():
-    print("\n====== TO-DO LIST APP ======")
-    print("1. View All Tasks")
-    print("2. View Pending Tasks")
-    print("3. View Completed Tasks")
-    print("4. Add Task")
-    print("5. Mark Task as Completed")
-    print("6. Remove Task")
-    print("7. Exit")
+# ----------------- Main App -----------------
+class TodoApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("📝 To-Do List App")
+        self.root.geometry("400x500")
+        self.root.config(bg="#f5f5f5")
 
-# 📋 View tasks
-def view_tasks(tasks, filter_by=None):
-    if not tasks:
-        print("\nNo tasks found.")
-        return
+        self.tasks = load_tasks()
 
-    filtered_tasks = tasks
-    if filter_by == "pending":
-        filtered_tasks = [t for t in tasks if not t["completed"]]
-    elif filter_by == "completed":
-        filtered_tasks = [t for t in tasks if t["completed"]]
+        # Title
+        tk.Label(root, text="My Tasks", font=("Helvetica", 18, "bold"), bg="#f5f5f5").pack(pady=10)
 
-    if not filtered_tasks:
-        print(f"\nNo {filter_by or 'tasks'} found.")
-        return
+        # Listbox
+        self.listbox = tk.Listbox(
+            root,
+            width=40,
+            height=15,
+            selectmode=tk.SINGLE,
+            font=("Helvetica", 12),
+            bg="#fff",
+            fg="#333",
+            selectbackground="#a6e3a1",
+            relief="flat",
+            borderwidth=0,
+            highlightthickness=0,
+        )
+        self.listbox.pack(pady=10)
 
-    print("\nYour Tasks:")
-    for i, task in enumerate(filtered_tasks, 1):
-        status = "✔" if task["completed"] else "❌"
-        print(f"{i}. {task['title']} [{status}]")
+        # Load existing tasks
+        self.load_listbox()
 
-# ➕ Add new task
-def add_task(tasks):
-    title = input("Enter task title: ").strip()
-    if title:
-        task = {"title": title, "completed": False}
-        tasks.append(task)
-        save_tasks(tasks)
-        print(f"✅ '{title}' added successfully!")
-    else:
-        print("Task title cannot be empty.")
+        # Entry field
+        self.task_entry = tk.Entry(root, font=("Helvetica", 12), width=25, bd=1, relief="solid")
+        self.task_entry.pack(pady=5)
 
-# ✅ Mark a task as completed
-def mark_completed(tasks):
-    view_tasks(tasks, filter_by="pending")
-    if not tasks:
-        return
-    try:
-        index = int(input("Enter the number of the task to complete: ")) - 1
-        pending_tasks = [t for t in tasks if not t["completed"]]
-        if 0 <= index < len(pending_tasks):
-            pending_tasks[index]["completed"] = True
-            save_tasks(tasks)
-            print(f"🎉 '{pending_tasks[index]['title']}' marked as completed!")
+        # Buttons Frame
+        button_frame = tk.Frame(root, bg="#f5f5f5")
+        button_frame.pack(pady=10)
+
+        tk.Button(button_frame, text="Add", command=self.add_task, width=8, bg="#4CAF50", fg="white", font=("Helvetica", 10)).grid(row=0, column=0, padx=5)
+        tk.Button(button_frame, text="Complete", command=self.mark_complete, width=8, bg="#2196F3", fg="white", font=("Helvetica", 10)).grid(row=0, column=1, padx=5)
+        tk.Button(button_frame, text="Delete", command=self.delete_task, width=8, bg="#f44336", fg="white", font=("Helvetica", 10)).grid(row=0, column=2, padx=5)
+
+    # ----------------- Functions -----------------
+    def load_listbox(self):
+        self.listbox.delete(0, tk.END)
+        for task in self.tasks:
+            display_text = f"✔ {task['title']}" if task["completed"] else f"❌ {task['title']}"
+            self.listbox.insert(tk.END, display_text)
+
+    def add_task(self):
+        title = self.task_entry.get().strip()
+        if title:
+            task = {"title": title, "completed": False}
+            self.tasks.append(task)
+            save_tasks(self.tasks)
+            self.load_listbox()
+            self.task_entry.delete(0, tk.END)
         else:
-            print("Invalid task number.")
-    except ValueError:
-        print("Please enter a valid number.")
+            messagebox.showwarning("Input Error", "Please enter a task.")
 
-# 🗑 Remove a task
-def remove_task(tasks):
-    view_tasks(tasks)
-    if not tasks:
-        return
-    try:
-        index = int(input("Enter the number of the task to remove: ")) - 1
-        if 0 <= index < len(tasks):
-            removed = tasks.pop(index)
-            save_tasks(tasks)
-            print(f"🗑 '{removed['title']}' removed.")
-        else:
-            print("Invalid task number.")
-    except ValueError:
-        print("Please enter a valid number.")
+    def mark_complete(self):
+        try:
+            index = self.listbox.curselection()[0]
+            self.tasks[index]["completed"] = True
+            save_tasks(self.tasks)
+            self.load_listbox()
+        except IndexError:
+            messagebox.showwarning("Selection Error", "Please select a task to complete.")
 
-# 🚀 Main program
-def main():
-    tasks = load_tasks()
-    while True:
-        show_menu()
-        choice = input("Choose an option (1-7): ").strip()
+    def delete_task(self):
+        try:
+            index = self.listbox.curselection()[0]
+            removed_task = self.tasks.pop(index)
+            save_tasks(self.tasks)
+            self.load_listbox()
+            messagebox.showinfo("Deleted", f"Task '{removed_task['title']}' deleted.")
+        except IndexError:
+            messagebox.showwarning("Selection Error", "Please select a task to delete.")
 
-        if choice == "1":
-            view_tasks(tasks)
-        elif choice == "2":
-            view_tasks(tasks, filter_by="pending")
-        elif choice == "3":
-            view_tasks(tasks, filter_by="completed")
-        elif choice == "4":
-            add_task(tasks)
-        elif choice == "5":
-            mark_completed(tasks)
-        elif choice == "6":
-            remove_task(tasks)
-        elif choice == "7":
-            print("👋 Goodbye! Your tasks are saved.")
-            break
-        else:
-            print("Invalid option, try again.")
-
+# ----------------- Run App -----------------
 if __name__ == "__main__":
-    main()
+    root = tk.Tk()
+    app = TodoApp(root)
+    root.mainloop()
