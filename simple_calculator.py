@@ -18,3 +18,9 @@ while True:
 
     if op == "+":
         print("result:",add(num1, num2))
+    if op == "-":
+        print("result: ", substract(num1, num2))
+    if op == "*":
+        print("result: ", multiply(num1, num2))
+    if op == "/":
+        print("result: ", division(num1, num2))
