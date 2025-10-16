@@ -131,7 +131,7 @@ while True:
 
     move()
 
-    # Check collision with body
+    # Check collision with body   
     for segment in segments:
         if segment.distance(head) < 20:
             time.sleep(1)
